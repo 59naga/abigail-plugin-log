@@ -108,7 +108,7 @@ export default class Log extends Plugin {
       this.output(...args);
     });
     this.parent.on('fatal', (...args) => {
-      this.outputFatail(...args);
+      this.outputFatal(...args);
     });
 
     const runLog = (scriptResult) => {
@@ -158,11 +158,11 @@ export default class Log extends Plugin {
 
   /**
   * @public
-  * @method outputFatail
+  * @method outputFatal
   * @param {any} args
   * @returns {undefined}
   */
-  outputFatail(...args) {
+  outputFatal(...args) {
     const ms = this.getElapsed();
     const msColored = chalk.gray(`+ ${ms}`);
     this.opts.process.stdout.write(`${msColored} ${Log.iconFatal} ${args.join(' ')}\n`);
