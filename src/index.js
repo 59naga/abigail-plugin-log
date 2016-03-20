@@ -15,7 +15,7 @@ export default class Log extends Plugin {
   * @static
   * @property iconFatal
   */
-  static iconFatal = chalk.magenta.inverse('@_@;;');
+  static iconFatal = chalk.magenta.inverse('@_@;');
 
   /**
   * @static

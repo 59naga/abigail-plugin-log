@@ -19,11 +19,10 @@ Abigail Plugin Log
   </a>
 </p>
 
-Installation
+No installation
 ---
-```bash
-npm install abigail-plugin-log --save
-```
+
+> abigail built-in plugin
 
 See also
 ---
