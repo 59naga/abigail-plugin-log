@@ -13,6 +13,12 @@ export default class Log extends Plugin {
 
   /**
   * @static
+  * @property iconFatal
+  */
+  static iconFatal = chalk.magenta.inverse('@_@;;');
+
+  /**
+  * @static
   * @property pass
   */
   static pass = chalk.cyan.underline;
@@ -101,6 +107,9 @@ export default class Log extends Plugin {
     this.parent.on('log', (...args) => {
       this.output(...args);
     });
+    this.parent.on('fatal', (...args) => {
+      this.outputFatail(...args);
+    });
 
     const runLog = (scriptResult) => {
       this.output(`run ${Log.strong(scriptResult.name)}.`);
@@ -145,6 +154,18 @@ export default class Log extends Plugin {
     const ms = this.getElapsed();
     const msColored = chalk.gray(`+ ${ms}`);
     this.opts.process.stdout.write(`${msColored} ${Log.icon} ${args.join(' ')}\n`);
+  }
+
+  /**
+  * @public
+  * @method outputFatail
+  * @param {any} args
+  * @returns {undefined}
+  */
+  outputFatail(...args) {
+    const ms = this.getElapsed();
+    const msColored = chalk.gray(`+ ${ms}`);
+    this.opts.process.stdout.write(`${msColored} ${Log.iconFatal} ${args.join(' ')}\n`);
   }
 
   /**

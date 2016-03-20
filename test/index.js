@@ -157,7 +157,20 @@ describe('Log', () => {
         .then(() =>
           emitter.emit('log', 'bar!').then(() => {
             const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ bar!\n$/));
+            assert(output.match(`ms ${stripAnsi(Log.icon)} bar!`));
+          })
+        );
+      });
+    });
+
+    describe('fatal', () => {
+      it('should be output with the icon', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('beforeImmediate')
+        .then(() =>
+          emitter.emit('fatal', new Error('baz~')).then(() => {
+            const output = stripAnsi(process.stdout.write.args[1][0]);
+            assert(output.match(`ms ${stripAnsi(Log.iconFatal)} Error: baz~`));
           })
         );
       });
