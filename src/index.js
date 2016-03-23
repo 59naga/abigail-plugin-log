@@ -1,10 +1,20 @@
 // dependencies
+import Plugin from 'abigail-plugin';
 import chalk from 'chalk';
 import { relative as relativePath } from 'path';
-import Plugin from 'abigail-plugin';
+import flattenDeep from 'lodash.flattendeep';
 
-// main
+// @class Log
 export default class Log extends Plugin {
+  /**
+  * @static
+  * @property defaultOptions
+  */
+  static defaultOptions = {
+    notifyCwd: true,
+    notifyPlugins: true,
+  }
+
   /**
   * @static
   * @property icon
@@ -28,6 +38,19 @@ export default class Log extends Plugin {
   * @property fail
   */
   static fail = chalk.yellow.underline;
+
+  /**
+  * @static
+  * @method important
+  * @param {array|string} arg
+  * @returns {string} output - underlined characters
+  */
+  static important(arg, glue = ', ') {
+    if (arg instanceof Array) {
+      return arg.map(word => chalk.inverse(word)).join(glue);
+    }
+    return chalk.inverse(arg);
+  }
 
   /**
   * @static
@@ -97,51 +120,78 @@ export default class Log extends Plugin {
   pluginWillAttach() {
     this.elapsed = Date.now();
 
-    if (!this.parent.packagePath) {
-      this.output('missing package.json.');
-    } else {
-      const path = relativePath(this.opts.process.cwd(), this.parent.packagePath);
-      this.output(`use ${chalk.inverse(path)}.`);
+    if (this.opts.notifyCwd) {
+      if (this.parent.json && this.parent.json.path) {
+        const path = relativePath(this.opts.process.cwd(), this.parent.json.path);
+        this.output(`use ${chalk.inverse(path)}.`);
+      } else {
+        this.output('missing package.json.');
+      }
+    }
+
+    if (this.opts.notifyPlugins) {
+      const available = [];
+      for (const key in this.parent.plugins) {
+        if (this.parent.plugins.hasOwnProperty(key) === false) {
+          continue;
+        }
+        available.push(this.parent.plugins[key].name);
+      }
+      this.output(`plugin enabled ${Log.important(available)}.`);
     }
 
     this.parent.on('log', (...args) => {
       this.output(...args);
     });
-    this.parent.on('fatal', (...args) => {
+    this.parent.on('script-error', (...args) => {
       this.outputFatal(...args);
     });
 
-    const runLog = (scriptResult) => {
+    const scriptStart = (scriptResult) => {
       this.output(`run ${Log.strong(scriptResult.name)}.`);
     };
-    const doneLog = (scriptResult) => {
+    const scriptEnd = (scriptResult) => {
       const name = Log.statuses(scriptResult.name, scriptResult.exitCode);
       const code = Log.statuses(scriptResult.exitCode);
 
       this.output(`done ${name}. exit code ${code}.`);
     };
 
-    this.parent.on('begin', (task = []) => {
-      const names = task.map((script) => script.name);
+    this.parent.on('task-start', (task = []) => {
+      const names = flattenDeep(task).map((serial) => serial.main ? serial.main.name : 'unknown');
       this.output(`begin ${Log.strong(names)}.`);
 
       if (task.length > 1) {
-        this.parent.on('run', runLog);
-        this.parent.on('done', doneLog);
+        this.parent.on('script-start', scriptStart);
+        this.parent.on('script-end', scriptEnd);
       }
     });
-    this.parent.on('end', (task = []) => {
-      const names = task.map((script) => script.name);
-      const codes = task.map((script) => script.exitCode);
+    this.parent.on('task-end', (result = []) => {
+      const scripts = flattenDeep(result);
+      const names = scripts.map((script) => script.script.name);
+      const codes = scripts.map((script) => script.exitCode);
+      this.exit = scripts.reduce((prev, script) => prev > 0 || script.exitCode > 0 ? 1 : 0, 0);
       this.output(`end ${Log.statuses(names, codes)}. exit code ${Log.statuses(codes)}.`);
 
-      this.parent.removeListener('run', runLog);
-      this.parent.removeListener('done', doneLog);
+      this.parent.removeListener('script-start', scriptStart);
+      this.parent.removeListener('script-end', scriptEnd);
     });
 
     this.parent.on('watch', (path, event) => {
       this.output(`file ${chalk.bold(path)} ${event}.`);
     });
+  }
+
+  /**
+  * @method pluginWillAttach
+  * @returns {undefined}
+  */
+  pluginWillDetach() {
+    if (this.exit === 0) {
+      this.output('cheers for good work.');
+    } else {
+      this.outputFatal("i'm terribly sorry...");
+    }
   }
 
   /**

@@ -16,18 +16,206 @@ const createMockProcess = () => ({
     write: sinon.spy(),
   },
 });
-const setupFixtures = () => {
+const setupFixtures = (options = {}) => {
   const emitter = new AsyncEmitter;
   const process = createMockProcess();
-  const log = new Log(emitter, { process });
+  const opts = { process, notifyCwd: false, notifyPlugins: false, ...options };
+  const log = new Log(emitter, true, opts);
 
-  emitter.packagePath = lookupSync('package.json');
+  emitter.json = {
+    path: lookupSync('package.json'),
+  };
 
   return { log, emitter, process };
 };
 
 // specs
 describe('Log', () => {
+  describe('plugin lifecycle', () => {
+    describe('attach-plugins', () => {
+      it('should be output the relative packagePath', () => {
+        const { emitter, process } = setupFixtures({ notifyCwd: true });
+        return emitter.emit('attach-plugins').then(() => {
+          const message = stripAnsi(process.stdout.write.args[0][0]);
+
+          assert(process.stdout.write.callCount === 1);
+          assert(message.match(/use package.json\.\n$/));
+        });
+      });
+
+      it('should be output that package.json is missing', () => {
+        const { emitter, process } = setupFixtures({ notifyCwd: true });
+        delete emitter.json;
+        return emitter.emit('attach-plugins').then(() => {
+          const message = stripAnsi(process.stdout.write.args[0][0]);
+
+          assert(process.stdout.write.callCount === 1);
+          assert(message.match(/missing package.json\.\n$/));
+        });
+      });
+    });
+
+    describe('detach-plugins', () => {
+      it('if the exit code is 0, it should cheer', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins').then(() =>
+          emitter.emit('task-end', [{ script: { exitCode: 0 } }])
+        )
+        .then(() => emitter.emit('detach-plugins'))
+        .then(() => {
+          const message = stripAnsi(process.stdout.write.args[1][0]);
+
+          assert(process.stdout.write.callCount === 2);
+          assert(message.match('cheers for good work.\n'));
+        });
+      });
+
+      it('unless the exit code is 0, it should apologize', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('detach-plugins').then(() => {
+          const message = stripAnsi(process.stdout.write.args[0][0]);
+
+          assert(process.stdout.write.callCount === 1);
+          assert(message.match("i'm terribly sorry...\n"));
+        });
+      });
+    });
+
+    describe('log', () => {
+      it('should be output with the icon', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('log', 'bar!').then(() => {
+            const output = stripAnsi(process.stdout.write.args[0][0]);
+            assert(output.match(`ms ${stripAnsi(Log.icon)} bar!`));
+          })
+        );
+      });
+    });
+
+    describe('script-error', () => {
+      it('should be output with the icon', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('script-error', new Error('baz~')).then(() => {
+            const output = stripAnsi(process.stdout.write.args[0][0]);
+            assert(output.match(`ms ${stripAnsi(Log.iconFatal)} Error: baz~`));
+          })
+        );
+      });
+    });
+
+    describe('script-start, script-end', () => {
+      const task = {
+        name: 'foo',
+        exitCode: 1,
+      };
+
+      it('should be output the object.name unless single task', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('task-start', [{}, {}])
+        )
+        .then(() =>
+          emitter.emit('script-start', task).then(() => {
+            const output = stripAnsi(process.stdout.write.args[1][0]);
+            assert(output.match(/\+[ \d]+ms @_@ run foo.\n$/));
+          })
+        );
+      });
+
+      it('should be output the object.name and exitCode unless single task', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('task-start', [{}, {}])
+        )
+        .then(() =>
+          emitter.emit('script-end', task).then(() => {
+            const output = stripAnsi(process.stdout.write.args[1][0]);
+            assert(output.match(/\+[ \d]+ms @_@ done foo. exit code 1.\n$/));
+          })
+        );
+      });
+    });
+
+    describe('task-start, task-end', () => {
+      it('should be output with the icon', () => {
+        const { emitter, process } = setupFixtures();
+        const tasks = [
+          {
+            main: {
+              name: 'foo',
+              exitCode: 1,
+            },
+          },
+          {
+            main: {
+              name: 'bar',
+              exitCode: 2,
+            },
+          },
+          {
+            main: {
+              name: 'baz',
+              exitCode: 3,
+            },
+          },
+        ];
+
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('task-start', tasks).then(() => {
+            const output = stripAnsi(process.stdout.write.args[0][0]);
+            assert(output.match(/\+[ \d]+ms @_@ begin foo, bar, baz.\n$/));
+          })
+        );
+      });
+
+      it('should be output with the icon', () => {
+        const { emitter, process } = setupFixtures();
+        const tasks = [
+          {
+            script: { name: 'foo' },
+            exitCode: 1,
+          },
+          {
+            script: { name: 'bar' },
+            exitCode: 2,
+          },
+          {
+            script: { name: 'baz' },
+            exitCode: 3,
+          },
+        ];
+
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('task-end', tasks).then(() => {
+            const output = stripAnsi(process.stdout.write.args[0][0]);
+            assert(output.match(/\+[ \d]+ms @_@ end foo, bar, baz. exit code 1, 2, 3.\n$/));
+          })
+        );
+      });
+    });
+
+    describe('watch', () => {
+      it('should be output with the icon', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('watch', '/path/to/dir', 'changed').then(() => {
+            const output = stripAnsi(process.stdout.write.args[0][0]);
+            assert(output.match(/\+[ \d]+ms @_@ file \/path\/to\/dir changed.\n$/));
+          })
+        );
+      });
+    });
+  });
+
   describe('.strong', () => {
     it('if first argument is array, should be join using second argument', () => {
       const output = stripAnsi(Log.strong(['foo', 'bar', 'baz'], '! '));
@@ -123,144 +311,6 @@ describe('Log', () => {
 
       assert(elapsed.length === 7);
       assert(elapsed.match(/[ \d]+ms$/));
-    });
-  });
-
-  describe('events of Abigail', () => {
-    describe('beforeImmediate', () => {
-      it('should be output the relative packagePath', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate').then(() => {
-          const message = stripAnsi(process.stdout.write.args[0][0]);
-
-          assert(process.stdout.write.callCount === 1);
-          assert(message.match(/use package.json\.\n$/));
-        });
-      });
-
-      it('should be output that package.json is missing', () => {
-        const { emitter, process } = setupFixtures();
-        delete emitter.packagePath;
-        return emitter.emit('beforeImmediate').then(() => {
-          const message = stripAnsi(process.stdout.write.args[0][0]);
-
-          assert(process.stdout.write.callCount === 1);
-          assert(message.match(/missing package.json\.\n$/));
-        });
-      });
-    });
-
-    describe('log', () => {
-      it('should be output with the icon', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('log', 'bar!').then(() => {
-            const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(`ms ${stripAnsi(Log.icon)} bar!`));
-          })
-        );
-      });
-    });
-
-    describe('fatal', () => {
-      it('should be output with the icon', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('fatal', new Error('baz~')).then(() => {
-            const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(`ms ${stripAnsi(Log.iconFatal)} Error: baz~`));
-          })
-        );
-      });
-    });
-
-    describe('run, done', () => {
-      const task = {
-        name: 'foo',
-        exitCode: 1,
-      };
-
-      it('should be output the object.name unless single task', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('begin', [{}, {}])
-        )
-        .then(() =>
-          emitter.emit('run', task).then(() => {
-            const output = stripAnsi(process.stdout.write.args[2][0]);
-            assert(output.match(/\+[ \d]+ms @_@ run foo.\n$/));
-          })
-        );
-      });
-
-      it('should be output the object.name and exitCode unless single task', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('begin', [{}, {}])
-        )
-        .then(() =>
-          emitter.emit('done', task).then(() => {
-            const output = stripAnsi(process.stdout.write.args[2][0]);
-            assert(output.match(/\+[ \d]+ms @_@ done foo. exit code 1.\n$/));
-          })
-        );
-      });
-    });
-
-    describe('begin, end', () => {
-      const tasks = [
-        {
-          name: 'foo',
-          exitCode: 1,
-        },
-        {
-          name: 'bar',
-          exitCode: 2,
-        },
-        {
-          name: 'baz',
-          exitCode: 3,
-        },
-      ];
-
-      it('should be output with the icon', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('begin', tasks).then(() => {
-            const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ begin foo, bar, baz.\n$/));
-          })
-        );
-      });
-
-      it('should be output with the icon', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('end', tasks).then(() => {
-            const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ end foo, bar, baz. exit code 1, 2, 3.\n$/));
-          })
-        );
-      });
-    });
-
-    describe('watch', () => {
-      it('should be output with the icon', () => {
-        const { emitter, process } = setupFixtures();
-        return emitter.emit('beforeImmediate')
-        .then(() =>
-          emitter.emit('watch', '/path/to/dir', 'changed').then(() => {
-            const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ file \/path\/to\/dir changed.\n$/));
-          })
-        );
-      });
     });
   });
 });

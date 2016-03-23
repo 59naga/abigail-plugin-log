@@ -15,7 +15,7 @@ branches:
 env:
   global:
     # CODECLIMATE_REPO_TOKEN
-    - secure:
+    - secure: BlhvkvfKx723+i+VJi+2yY5qTMOIo+Onm/+fE4hYllascmirAxIOjWgHXXwW4FQIJUrL0zSCJxwDtUYanJTDydDgz+chi+q05IH3ULno9IZ26CXr2Z9vmrk0b+u7KT4N3IujFD6FhVDLcMxymgdtJ4Rn0R3SSTNBlGvP6VjCR5FTcqzCIbu4NTiE44gzq/N32JzzbdFIkf5PMIpQSzi6bZopAAyyJZRyrfUEyOm/ej3USDraLFjH9pVTSjUcBvm4ZlPr24mYW7uumASGNeXEie0fweXDscSc2KzdQT2ius3UykMsctoWGrm7wYiaLVrOmPcU9HTDTl8xMhn+xu93zMYSuzpvYHlu8lsb0Qw8I4QKS8rkgU/fn6gvS4wB8DBTT0NpxGPjWliKXc7zRuCm/6oLSbuOGf1ff5gKgghJK0poC4nOdeAu/gOfOOQSb1KPFpF/lFl2EdcU9MdTiV6qM0Fxg2xp+Zck00O1JXaWB1nSjrILvl9lL+dpKavoxa/i3yN0Uz6ujyHKDkORX6Sw1WwHw+5rVIptPTBNcutVEPY+oieh1GrLeUvk/gKELoBc8ethAi8uFUQENnPZh/ibqlw0Z7By4IvEswcQImGGL8ETKYVr2mTHIS5Sdp11xbwkUP/vzJdC9N8j8+yLzpl8sAV0FCdz9HYlYy3h28eMiSI=
 
 # Language options
 language: node_js
