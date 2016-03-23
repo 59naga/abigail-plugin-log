@@ -1,7 +1,7 @@
 {
   "name": "abigail-plugin-log",
   "description": "abigail log plugin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "lib",
   "files": [
     "lib"
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "abigail": "^0.1.2",
-    "abigail-plugin": "^0.0.6",
+    "abigail-plugin": "^0.0.7",
     "babel-cli": "^6.6.5",
     "babel-eslint": "^5.0.0",
     "babel-plugin-add-module-exports": "^0.1.2",

@@ -140,10 +140,10 @@ export default class Log extends Plugin {
       this.output(`plugin enabled ${Log.important(available)}.`);
     }
 
-    this.parent.on('log', (...args) => {
+    this.subscribe('log', (...args) => {
       this.output(...args);
     });
-    this.parent.on('script-error', (...args) => {
+    this.subscribe('script-error', (...args) => {
       this.outputFatal(...args);
     });
 
@@ -157,16 +157,16 @@ export default class Log extends Plugin {
       this.output(`done ${name}. exit code ${code}.`);
     };
 
-    this.parent.on('task-start', (task = []) => {
+    this.subscribe('task-start', (task = []) => {
       const names = flattenDeep(task).map((serial) => serial.main ? serial.main.name : 'unknown');
       this.output(`begin ${Log.strong(names)}.`);
 
       if (task.length > 1) {
-        this.parent.on('script-start', scriptStart);
-        this.parent.on('script-end', scriptEnd);
+        this.subscribe('script-start', scriptStart);
+        this.subscribe('script-end', scriptEnd);
       }
     });
-    this.parent.on('task-end', (result = []) => {
+    this.subscribe('task-end', (result = []) => {
       const scripts = flattenDeep(result);
       const names = scripts.map((script) => script.script.name);
       const codes = scripts.map((script) => script.exitCode);
@@ -177,7 +177,7 @@ export default class Log extends Plugin {
       this.parent.removeListener('script-end', scriptEnd);
     });
 
-    this.parent.on('watch', (path, event) => {
+    this.subscribe('watch', (path, event) => {
       this.output(`file ${chalk.bold(path)} ${event}.`);
     });
   }
