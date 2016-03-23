@@ -9,8 +9,7 @@ env:
 rules:
   valid-jsdoc:
     - 2
-    - requireParamDescription: false
-      prefer:
+    - prefer:
         return: returns
 
   max-len: 1

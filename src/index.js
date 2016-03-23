@@ -42,7 +42,7 @@ export default class Log extends Plugin {
   /**
   * @static
   * @method important
-  * @param {array|string} arg
+  * @param {array|string} arg - an output string
   * @returns {string} output - underlined characters
   */
   static important(arg, glue = ', ') {
@@ -55,7 +55,7 @@ export default class Log extends Plugin {
   /**
   * @static
   * @method strong
-  * @param {array|string} arg
+  * @param {array|string} arg - an output string
   * @returns {string} output - underlined characters
   */
   static strong(arg, glue = ', ') {
@@ -147,19 +147,19 @@ export default class Log extends Plugin {
       this.outputFatal(...args);
     });
 
-    const scriptStart = (scriptResult) => {
-      this.output(`run ${Log.strong(scriptResult.name)}.`);
+    const scriptStart = ({ script }) => {
+      this.output(`script start ${Log.strong(script.name)}.`);
     };
-    const scriptEnd = (scriptResult) => {
-      const name = Log.statuses(scriptResult.name, scriptResult.exitCode);
-      const code = Log.statuses(scriptResult.exitCode);
+    const scriptEnd = ({ script, exitCode }) => {
+      const name = Log.statuses(script.name, exitCode);
+      const code = Log.statuses(exitCode);
 
-      this.output(`done ${name}. exit code ${code}.`);
+      this.output(`script end ${name}. exit code ${code}.`);
     };
 
     this.subscribe('task-start', (task = []) => {
       const names = flattenDeep(task).map((serial) => serial.main ? serial.main.name : 'unknown');
-      this.output(`begin ${Log.strong(names)}.`);
+      this.output(`task start ${Log.strong(names)}.`);
 
       if (task.length > 1) {
         this.subscribe('script-start', scriptStart);
@@ -171,7 +171,7 @@ export default class Log extends Plugin {
       const names = scripts.map((script) => script.script.name);
       const codes = scripts.map((script) => script.exitCode);
       this.exit = scripts.reduce((prev, script) => prev > 0 || script.exitCode > 0 ? 1 : 0, 0);
-      this.output(`end ${Log.statuses(names, codes)}. exit code ${Log.statuses(codes)}.`);
+      this.output(`task end ${Log.statuses(names, codes)}. exit code ${Log.statuses(codes)}.`);
 
       this.parent.removeListener('script-start', scriptStart);
       this.parent.removeListener('script-end', scriptEnd);
@@ -197,7 +197,7 @@ export default class Log extends Plugin {
   /**
   * @public
   * @method output
-  * @param {any} args
+  * @param {any} args - output string
   * @returns {undefined}
   */
   output(...args) {
@@ -209,7 +209,7 @@ export default class Log extends Plugin {
   /**
   * @public
   * @method outputFatal
-  * @param {any} args
+  * @param {any} args - an output string
   * @returns {undefined}
   */
   outputFatal(...args) {

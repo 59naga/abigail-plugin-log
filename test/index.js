@@ -109,7 +109,7 @@ describe('Log', () => {
 
     describe('script-start, script-end', () => {
       const task = {
-        name: 'foo',
+        script: { name: 'foo' },
         exitCode: 1,
       };
 
@@ -122,7 +122,7 @@ describe('Log', () => {
         .then(() =>
           emitter.emit('script-start', task).then(() => {
             const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ run foo.\n$/));
+            assert(output.match(/\+[ \d]+ms @_@ script start foo.\n$/));
           })
         );
       });
@@ -136,7 +136,7 @@ describe('Log', () => {
         .then(() =>
           emitter.emit('script-end', task).then(() => {
             const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ done foo. exit code 1.\n$/));
+            assert(output.match(/\+[ \d]+ms @_@ script end foo. exit code 1.\n$/));
           })
         );
       });
@@ -170,7 +170,7 @@ describe('Log', () => {
         .then(() =>
           emitter.emit('task-start', tasks).then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
-            assert(output.match(/\+[ \d]+ms @_@ begin foo, bar, baz.\n$/));
+            assert(output.match(/\+[ \d]+ms @_@ task start foo, bar, baz.\n$/));
           })
         );
       });
@@ -196,7 +196,7 @@ describe('Log', () => {
         .then(() =>
           emitter.emit('task-end', tasks).then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
-            assert(output.match(/\+[ \d]+ms @_@ end foo, bar, baz. exit code 1, 2, 3.\n$/));
+            assert(output.match(/\+[ \d]+ms @_@ task end foo, bar, baz. exit code 1, 2, 3.\n$/));
           })
         );
       });
