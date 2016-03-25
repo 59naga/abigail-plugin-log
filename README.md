@@ -24,10 +24,35 @@ No installation
 
 > abigail built-in plugin
 
+Usage
+---
+if this plugin is enabled, output the debugging information.
+
+```bash
+abby test
+# +    1 ms @_@ use package.json.
+# +    1 ms @_@ plugin enabled exit, log, launch, watch.
+# +   21 ms @_@ task start test.
+# ...
+#   18 passing (56ms)
+# ...
+# +  2.8  s @_@ task end test. exit code 0.
+# +    1 ms @_@ ... watch at src/**/*.js, test/**/*.js.
+```
+
+if turned off, becomes only to the output of the emulator.
+
+```bash
+abby test --no-log
+# ...
+#   18 passing (56ms)
+# ...
+```
+
 See also
 ---
-* [abigailjs/abigail](https://github.com/abigailjs/abigail)
-* [abigailjs/abigail-plugin](https://github.com/abigailjs/abigail-plugin)
+* [abigailjs/abigail](https://github.com/abigailjs/abigail#usage)
+* [abigailjs/abigail-plugin](https://github.com/abigailjs/abigail-plugin#usage)
 
 Development
 ---
