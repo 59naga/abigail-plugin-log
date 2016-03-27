@@ -1,4 +1,4 @@
-Abigail Plugin Log
+Abigail Log Plugin
 ---
 
 <p align="right">
