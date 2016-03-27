@@ -22,9 +22,11 @@ const setupFixtures = (options = {}) => {
   const opts = { process, notifyCwd: false, notifyPlugins: false, ...options };
   const log = new Log(emitter, true, opts);
 
-  emitter.json = {
-    path: lookupSync('package.json'),
-  };
+  log.setProps({
+    json: {
+      path: lookupSync('package.json'),
+    },
+  });
 
   return { log, emitter, process };
 };
@@ -44,13 +46,32 @@ describe('Log', () => {
       });
 
       it('should be output that package.json is missing', () => {
-        const { emitter, process } = setupFixtures({ notifyCwd: true });
-        delete emitter.json;
+        const { log, emitter, process } = setupFixtures({ notifyCwd: true });
+        log.setProps({ json: null });
+
         return emitter.emit('attach-plugins').then(() => {
           const message = stripAnsi(process.stdout.write.args[0][0]);
 
           assert(process.stdout.write.callCount === 1);
           assert(message.match(/missing package.json\.\n$/));
+        });
+      });
+
+      it('should be output the available plugin names', () => {
+        const { log, emitter, process } = setupFixtures({ notifyPlugins: true });
+        log.setProps({
+          plugins: {
+            foo: { name: 'foo' },
+            bar: { name: 'bar' },
+            baz: { name: 'baz' },
+          },
+        });
+
+        return emitter.emit('attach-plugins').then(() => {
+          const message = stripAnsi(process.stdout.write.args[0][0]);
+
+          assert(process.stdout.write.callCount === 1);
+          assert(message.match(/plugin enabled foo, bar, baz\.\n$/));
         });
       });
     });

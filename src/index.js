@@ -121,8 +121,9 @@ export default class Log extends Plugin {
     this.elapsed = Date.now();
 
     if (this.opts.notifyCwd) {
-      if (this.parent.json && this.parent.json.path) {
-        const path = relativePath(this.opts.process.cwd(), this.parent.json.path);
+      const json = this.getProps().json;
+      if (json && json.path) {
+        const path = relativePath(this.opts.process.cwd(), json.path);
         this.output(`use ${chalk.inverse(path)}.`);
       } else {
         this.output('missing package.json.');
@@ -130,12 +131,13 @@ export default class Log extends Plugin {
     }
 
     if (this.opts.notifyPlugins) {
+      const plugins = this.getProps().plugins || {};
       const available = [];
-      for (const key in this.parent.plugins) {
-        if (this.parent.plugins.hasOwnProperty(key) === false) {
+      for (const key in plugins) {
+        if (plugins.hasOwnProperty(key) === false) {
           continue;
         }
-        available.push(this.parent.plugins[key].name);
+        available.push(plugins[key].name);
       }
       this.output(`plugin enabled ${Log.important(available)}.`);
     }
