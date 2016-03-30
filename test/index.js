@@ -161,6 +161,23 @@ describe('Log', () => {
           })
         );
       });
+
+      it('should be output the object.name and exitCode in serial execution', () => {
+        const { emitter, process } = setupFixtures();
+        return emitter.emit('attach-plugins')
+        .then(() =>
+          emitter.emit('task-start', [[
+            [{ main: { raw: 'echo foo' } }],
+            [{ main: { raw: 'echo bar' } }],
+          ]])
+        )
+        .then(() =>
+          emitter.emit('script-end', task).then(() => {
+            const output = stripAnsi(process.stdout.write.args[1][0]);
+            assert(output.match(/\+[ \d]+ms @_@ script end foo. exit code 1.\n$/));
+          })
+        );
+      });
     });
 
     describe('task-start, task-end', () => {

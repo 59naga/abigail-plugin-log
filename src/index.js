@@ -163,7 +163,7 @@ export default class Log extends Plugin {
       const names = flattenDeep(task).map((serial) => serial.main ? serial.main.name : 'unknown');
       this.output(`task start ${Log.strong(names)}.`);
 
-      if (task.length > 1) {
+      if (names.length > 1) {
         this.subscribe('script-start', scriptStart);
         this.subscribe('script-end', scriptEnd);
       }
