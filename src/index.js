@@ -152,7 +152,12 @@ export default class Log extends Plugin {
         }
         return 'unknown';
       });
-      this.output(`task start ${Log.strong(names)}.`);
+      const suffixes = this.getProps().scriptSuffixes || [];
+      let suffix = '';
+      if (suffixes.length) {
+        suffix = ` (with ${Log.strong(suffixes, ' ')})`;
+      }
+      this.output(`task start ${Log.strong(names)}.${suffix}`);
 
       if (names.length > 1) {
         this.subscribe('script-start', scriptStart);
