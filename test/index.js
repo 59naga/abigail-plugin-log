@@ -81,6 +81,42 @@ describe('Log', () => {
           assert(message.match(/plugin enabled foo, bar, baz\.\n$/));
         });
       });
+
+      it('should be output the parent.props.scriptSuffixes(abigail#12)', () => {
+        const { log, emitter, process } = setupFixtures({ notifyPlugins: true });
+
+        const tasks = [
+          {
+            main: {
+              name: 'foo',
+              exitCode: 1,
+            },
+          },
+          {
+            main: {
+              name: 'bar',
+              exitCode: 2,
+            },
+          },
+          {
+            main: {
+              name: 'baz',
+              exitCode: 3,
+            },
+          },
+        ];
+        log.setProps({
+          scriptSuffixes: ['beep', 'boop', 'kaboom'],
+        });
+
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
+        .then(() => emitter.emit('task-start', tasks))
+        .then(() => {
+          const output = stripAnsi(process.stdout.write.args[1][0]);
+          assert(output.match(/\+[ \d]+ms @_@ task start foo, bar, baz. \(with beep boop kaboom\)\n$/));
+        });
+      });
     });
 
     describe('detach-plugins', () => {

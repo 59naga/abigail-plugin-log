@@ -11,7 +11,7 @@
     "lodash.flattendeep": "^4.1.0"
   },
   "scripts": {
-    "start": "abby test",
+    "start": "abby test --watch",
     "test": "mocha --compilers js:babel-register",
     "lint": "eslint src test",
     "cover": "abby cover:test, cover:report --no-watch",
