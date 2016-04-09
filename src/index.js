@@ -43,6 +43,7 @@ export default class Log extends Plugin {
   * @static
   * @method important
   * @param {array|string} arg - an output string
+  * @param {string} glue - a string separator
   * @returns {string} output - underlined characters
   */
   static important(arg, glue = ', ') {
@@ -56,6 +57,7 @@ export default class Log extends Plugin {
   * @static
   * @method strong
   * @param {array|string} arg - an output string
+  * @param {string} glue - a string separator
   * @returns {string} output - underlined characters
   */
   static strong(arg, glue = ', ') {
@@ -70,6 +72,7 @@ export default class Log extends Plugin {
   * @method statuses
   * @param {array|any} arg - source chalacters
   * @param {array|number} ref - exit code
+  * @param {string} glue - a string separator
   * @returns {string} output - ansi colored characters (cyan or yellow)
   */
   static statuses(arg, ref, glue = ', ') {
@@ -83,9 +86,13 @@ export default class Log extends Plugin {
       refs = args;
     }
 
-    return args.map((status, i) =>
-      refs[i] > 0 ? Log.fail(status) : Log.pass(status)
-    ).join(glue);
+    return args.map((status, i) => {
+      if (refs[i] > 0) {
+        return Log.fail(status);
+      }
+
+      return Log.pass(status);
+    }).join(glue);
   }
 
   /**
@@ -111,6 +118,66 @@ export default class Log extends Plugin {
     }
 
     return `   ${weight}${unit}`.slice(-7);
+  }
+
+  /**
+  * the plugin lifecycle method
+  * execute only once before the parse
+  *
+  * @method pluginDidInitialize
+  * @returns {undefined}
+  */
+  pluginDidInitialize() {
+    this.subscribe('log', (...args) => {
+      this.output(...args);
+    });
+    this.subscribe('script-error', (...args) => {
+      this.outputFatal(...args);
+    });
+
+    const scriptStart = ({ script }) => {
+      this.output(`script start ${Log.strong(script.name)}.`);
+    };
+    const scriptEnd = ({ script, exitCode }) => {
+      const name = Log.statuses(script.name, exitCode);
+      const code = Log.statuses(exitCode);
+
+      this.output(`script end ${name}. exit code ${code}.`);
+    };
+
+    this.subscribe('task-start', (task = []) => {
+      const names = flattenDeep(task).map((serial) => {
+        if (serial.main) {
+          return serial.main.name;
+        }
+        return 'unknown';
+      });
+      this.output(`task start ${Log.strong(names)}.`);
+
+      if (names.length > 1) {
+        this.subscribe('script-start', scriptStart);
+        this.subscribe('script-end', scriptEnd);
+      }
+    });
+    this.subscribe('task-end', (result = []) => {
+      const scripts = flattenDeep(result);
+      const names = scripts.map((script) => script.script.name);
+      const codes = scripts.map((script) => script.exitCode);
+      this.exit = scripts.reduce((prev, script) => {
+        if (prev > 0 || script.exitCode > 0) {
+          return 1;
+        }
+        return 0;
+      }, 0);
+      this.output(`task end ${Log.statuses(names, codes)}. exit code ${Log.statuses(codes)}.`);
+
+      this.parent.removeListener('script-start', scriptStart);
+      this.parent.removeListener('script-end', scriptEnd);
+    });
+
+    this.subscribe('watch', (path, event) => {
+      this.output(`file ${chalk.bold(path)} ${event}.`);
+    });
   }
 
   /**
@@ -141,47 +208,6 @@ export default class Log extends Plugin {
       }
       this.output(`plugin enabled ${Log.important(available)}.`);
     }
-
-    this.subscribe('log', (...args) => {
-      this.output(...args);
-    });
-    this.subscribe('script-error', (...args) => {
-      this.outputFatal(...args);
-    });
-
-    const scriptStart = ({ script }) => {
-      this.output(`script start ${Log.strong(script.name)}.`);
-    };
-    const scriptEnd = ({ script, exitCode }) => {
-      const name = Log.statuses(script.name, exitCode);
-      const code = Log.statuses(exitCode);
-
-      this.output(`script end ${name}. exit code ${code}.`);
-    };
-
-    this.subscribe('task-start', (task = []) => {
-      const names = flattenDeep(task).map((serial) => serial.main ? serial.main.name : 'unknown');
-      this.output(`task start ${Log.strong(names)}.`);
-
-      if (names.length > 1) {
-        this.subscribe('script-start', scriptStart);
-        this.subscribe('script-end', scriptEnd);
-      }
-    });
-    this.subscribe('task-end', (result = []) => {
-      const scripts = flattenDeep(result);
-      const names = scripts.map((script) => script.script.name);
-      const codes = scripts.map((script) => script.exitCode);
-      this.exit = scripts.reduce((prev, script) => prev > 0 || script.exitCode > 0 ? 1 : 0, 0);
-      this.output(`task end ${Log.statuses(names, codes)}. exit code ${Log.statuses(codes)}.`);
-
-      this.parent.removeListener('script-start', scriptStart);
-      this.parent.removeListener('script-end', scriptEnd);
-    });
-
-    this.subscribe('watch', (path, event) => {
-      this.output(`file ${chalk.bold(path)} ${event}.`);
-    });
   }
 
   /**

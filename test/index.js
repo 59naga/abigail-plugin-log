@@ -37,7 +37,10 @@ describe('Log', () => {
     describe('attach-plugins', () => {
       it('should be output the relative packagePath', () => {
         const { emitter, process } = setupFixtures({ notifyCwd: true });
-        return emitter.emit('attach-plugins').then(() => {
+
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
+        .then(() => {
           const message = stripAnsi(process.stdout.write.args[0][0]);
 
           assert(process.stdout.write.callCount === 1);
@@ -49,7 +52,9 @@ describe('Log', () => {
         const { log, emitter, process } = setupFixtures({ notifyCwd: true });
         log.setProps({ json: null });
 
-        return emitter.emit('attach-plugins').then(() => {
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
+        .then(() => {
           const message = stripAnsi(process.stdout.write.args[0][0]);
 
           assert(process.stdout.write.callCount === 1);
@@ -67,7 +72,9 @@ describe('Log', () => {
           },
         });
 
-        return emitter.emit('attach-plugins').then(() => {
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
+        .then(() => {
           const message = stripAnsi(process.stdout.write.args[0][0]);
 
           assert(process.stdout.write.callCount === 1);
@@ -79,7 +86,10 @@ describe('Log', () => {
     describe('detach-plugins', () => {
       it('if the exit code is 0, it should cheer', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins').then(() =>
+
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
+        .then(() =>
           emitter.emit('task-end', [{ script: { exitCode: 0 } }])
         )
         .then(() => emitter.emit('detach-plugins'))
@@ -105,7 +115,8 @@ describe('Log', () => {
     describe('log', () => {
       it('should be output with the icon', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('log', 'bar!').then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
@@ -118,7 +129,8 @@ describe('Log', () => {
     describe('script-error', () => {
       it('should be output with the icon', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('script-error', new Error('baz~')).then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
@@ -136,7 +148,8 @@ describe('Log', () => {
 
       it('should be output the object.name unless single task', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('task-start', [{}, {}])
         )
@@ -150,7 +163,8 @@ describe('Log', () => {
 
       it('should be output the object.name and exitCode unless single task', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('task-start', [{}, {}])
         )
@@ -164,7 +178,8 @@ describe('Log', () => {
 
       it('should be output the object.name and exitCode in serial execution', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('task-start', [[
             [{ main: { raw: 'echo foo' } }],
@@ -204,7 +219,8 @@ describe('Log', () => {
           },
         ];
 
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('task-start', tasks).then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
@@ -230,7 +246,8 @@ describe('Log', () => {
           },
         ];
 
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('task-end', tasks).then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
@@ -243,7 +260,8 @@ describe('Log', () => {
     describe('watch', () => {
       it('should be output with the icon', () => {
         const { emitter, process } = setupFixtures();
-        return emitter.emit('attach-plugins')
+        return emitter.emit('initialized')
+        .then(() => emitter.emit('attach-plugins'))
         .then(() =>
           emitter.emit('watch', '/path/to/dir', 'changed').then(() => {
             const output = stripAnsi(process.stdout.write.args[0][0]);
