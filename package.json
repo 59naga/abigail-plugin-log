@@ -19,7 +19,6 @@
     "cover:report": "npm-if TRAVIS \"codeclimate-test-reporter < coverage/lcov.info\"",
     "build": "abby build:* --env",
     "build:compile": "rollup -c",
-    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md",
     "postversion": "git push --follow-tags && conventional-github-releaser -p angular -r 0"
   },
   "devDependencies": {
@@ -37,7 +36,6 @@
     "chokidar": "^1.4.3",
     "climb-lookup": "^1.0.0",
     "codeclimate-test-reporter": "^0.3.1",
-    "conventional-changelog-cli": "^1.1.1",
     "conventional-github-releaser": "^1.1.1",
     "cross-env": "^1.0.7",
     "eslint": "^2.6.0",
