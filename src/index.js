@@ -136,7 +136,11 @@ export default class Log extends Plugin {
     });
 
     const scriptStart = ({ script }) => {
-      this.output(`script start ${Log.strong(script.name)}.`);
+      let suffix = '';
+      if (script.meta && script.meta.suffix) {
+        suffix = ` (with ${Log.strong(script.meta.suffix, ' ')})`;
+      }
+      this.output(`script start ${Log.strong(script.name)}.${suffix}`);
     };
     const scriptEnd = ({ script, exitCode }) => {
       const name = Log.statuses(script.name, exitCode);
@@ -205,12 +209,12 @@ export default class Log extends Plugin {
     if (this.opts.notifyPlugins) {
       const plugins = this.getProps().plugins || {};
       const available = [];
-      for (const key in plugins) {
+      Object.keys(plugins).forEach(key => {
         if (plugins.hasOwnProperty(key) === false) {
-          continue;
+          return;
         }
         available.push(plugins[key].name);
-      }
+      });
       this.output(`plugin enabled ${Log.important(available)}.`);
     }
   }

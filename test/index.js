@@ -178,7 +178,10 @@ describe('Log', () => {
 
     describe('script-start, script-end', () => {
       const task = {
-        script: { name: 'foo' },
+        script: {
+          name: 'foo',
+          meta: { suffix: 'beep boop kaboom' },
+        },
         exitCode: 1,
       };
 
@@ -192,7 +195,7 @@ describe('Log', () => {
         .then(() =>
           emitter.emit('script-start', task).then(() => {
             const output = stripAnsi(process.stdout.write.args[1][0]);
-            assert(output.match(/\+[ \d]+ms @_@ script start foo.\n$/));
+            assert(output.match(/\+[ \d]+ms @_@ script start foo. \(with beep boop kaboom\)\n$/));
           })
         );
       });
